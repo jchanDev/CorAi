@@ -24,7 +24,7 @@ const MainTab = () => {
   } = useReactMediaRecorder({ audio: true });
   const download = () => {
     if (mediaBlobUrl) {
-      transcribed = true;
+      setTranscribed(true);
       var element = document.createElement("a");
       element.setAttribute("href", mediaBlobUrl);
       element.setAttribute("download", "audio.mp3");
@@ -88,6 +88,54 @@ const MainTab = () => {
     },
   ]);
 
+  async function callTranscribeEndpoint(file: File): Promise<any> {
+    const url = 'http://20.124.194.25:80/transcribe';
+  
+    const formData = new FormData();
+    formData.append('file', file);
+  
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error('Error calling API endpoint');
+      }
+  
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+
+  async function callNotesEndpoint(text: string): Promise<any> {
+    const url = 'http://20.124.194.25:80/notes';
+
+    const formData = new FormData();
+    formData.append('text', text);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Error calling API endpoint');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+
   const changePaperContent = (index: number) => {
     const updatedOptions = paperOptions.map((option, i) => ({
       label: option.label,
@@ -145,6 +193,7 @@ const MainTab = () => {
 
           {status === "recording" && (
             <button onClick={stopRecording} className="record-button">
+              callTranscribeEndpoint(mediaBlobUrl);
               <div className="mic-icon">
                 <FontAwesomeIcon icon={faPause} />
                 <div className="mic-text">Stop</div>

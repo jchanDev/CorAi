@@ -58,7 +58,9 @@ async def transcribe(file: UploadFile = File(...)):
 @app.post("/notes")
 async def notes(notes: Notes):
     gpt_results = gpt_notes(notes.notes)
-    return {"notes": gpt_results}
+    reviews = gpt_review_questions(gpt_results)
+    return {"notes": gpt_results,
+            "review_questions": reviews}
 
 def clean_string(string):
     rgx_list = [r'\(.*\)']
