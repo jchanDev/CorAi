@@ -76,10 +76,11 @@
 .paper{
   flex:2;
   background-color: #fff;
-  height: 520px;
+  height: 515px;
   margin-right: 35px;
   overflow-y: scroll;
 }
+
 
 .paper-options{
   display: flex;
