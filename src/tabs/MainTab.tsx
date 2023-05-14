@@ -26,7 +26,7 @@ const MainTab = () => {
     if (mediaBlobUrl) {
       var element = document.createElement("a");
       element.setAttribute("href", mediaBlobUrl);
-      element.setAttribute("download", "audio.webm");
+      element.setAttribute("download", "audio.mp3");
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
@@ -34,62 +34,6 @@ const MainTab = () => {
     }
   };
   const [showMainTab, setShowMainTab] = useState(false);
-  /*const [permission, setPermission] = useState(false);
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const [recordingStatus, setRecordingStatus] = useState("inactive");
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [audio, setAudio] = useState<string | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-
-  const getMicPermission = async () => {
-    try {
-      const streamData = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-      setPermission(true);
-      setStream(streamData);
-    } catch (error) {
-      if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert("Unknown error");
-      }
-    }
-  };
-
-  const startRecording = async () => {
-    setRecordingStatus("recording");
-    //create new Media recorder instance using the stream
-    if (stream) {
-      const media = new MediaRecorder(stream, { mimeType });
-      //set the MediaRecorder instance to the mediaRecorder ref
-      mediaRecorder.current = media;
-      //invokes the start method to start the recording process
-      mediaRecorder.current.start();
-      let localAudioChunks: Blob[] = [];
-      mediaRecorder.current.ondataavailable = (event) => {
-        if (typeof event.data === "undefined") return;
-        if (event.data.size === 0) return;
-        localAudioChunks.push(event.data);
-      };
-      setAudioChunks(localAudioChunks);
-    }
-  };
-  const stopRecording = () => {
-    setRecordingStatus("inactive");
-    //stops the recording instance
-    if (mediaRecorder.current) {
-      mediaRecorder.current.stop();
-      mediaRecorder.current.onstop = () => {
-        //creates a blob file from the audiochunks data
-        const audioBlob = new Blob(audioChunks, { type: mimeType });
-        //creates a playable URL from the blob file.
-        const audioUrl = URL.createObjectURL(audioBlob);
-        setAudio(() => audioUrl);
-        setAudioChunks([]);
-      };
-    }
-  };*/
 
   const handleClick = () => {
     setShowMainTab(true);
@@ -101,6 +45,54 @@ const MainTab = () => {
     { label: "Notes", color: false },
     { label: "Review questions", color: false },
   ]);
+
+  async function callTranscribeEndpoint(file: File): Promise<any> {
+    const url = 'http://20.124.194.25:80/transcribe';
+  
+    const formData = new FormData();
+    formData.append('file', file);
+  
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error('Error calling API endpoint');
+      }
+  
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+
+  async function callNotesEndpoint(text: string): Promise<any> {
+    const url = 'http://20.124.194.25:80/notes';
+
+    const formData = new FormData();
+    formData.append('text', text);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Error calling API endpoint');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
 
   const changePaperContent = (index: number) => {
     const updatedOptions = paperOptions.map((option, i) => ({
@@ -149,6 +141,7 @@ const MainTab = () => {
 
           {status === "recording" && (
             <button onClick={stopRecording} className="record-button">
+              callTranscribeEndpoint(mediaBlobUrl);
               <div className="mic-icon">
                 <FontAwesomeIcon icon={faPause} />
                 <div className="mic-text">Stop</div>
