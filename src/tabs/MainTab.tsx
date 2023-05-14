@@ -12,7 +12,7 @@ import { useReactMediaRecorder } from "react-media-recorder";
 import "react-quill/dist/quill.snow.css";
 import "../App.css";
 
-//const mimeType = "audio/webm";
+// const mimeType = "audio/wav";
 const MainTab = () => {
   const {
     status,
@@ -20,7 +20,7 @@ const MainTab = () => {
     pauseRecording,
     stopRecording,
     mediaBlobUrl,
-  } = useReactMediaRecorder({ audio: true });
+  } = useReactMediaRecorder({ audio: true, blobPropertyBag: { type: "audio/wav" } });
   const download = () => {
     if (mediaBlobUrl) {
       setPaperOptions(paperOptions => paperOptions.map((option, i) => {
@@ -37,7 +37,7 @@ const MainTab = () => {
       setTranscribed(true);
       var element = document.createElement("a");
       element.setAttribute("href", mediaBlobUrl);
-      element.setAttribute("download", "audio.mp3");
+      element.setAttribute("download", "audio.wav");
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
@@ -128,6 +128,14 @@ const MainTab = () => {
     }
   }
 
+  // async function handleEndRecording() {
+  //   if (mediaBlobUrl) {
+  //     const file = await fetch(mediaBlobUrl).then((r) => r.blob());
+  //     const data = await callTranscribeEndpoint(file);
+  //     setText(data.transcript);
+  //   }
+  // }
+
   async function callNotesEndpoint(text: string): Promise<any> {
     const url = "http://20.124.194.25:80/notes";
 
@@ -149,6 +157,21 @@ const MainTab = () => {
     } catch (error) {
       console.error("Error:", error);
       throw error;
+    }
+  }
+
+  async function transcribe() {
+    download();
+    if (mediaBlobUrl) {
+      const audioBlob = await fetch(mediaBlobUrl).then((r) => r.blob());
+      const audioFile = new File([audioBlob], 'voice.wav', { type: 'audio/wav' });
+      const formData = new FormData(); // preparing to send to the server
+  
+      formData.append('file', audioFile);  // preparing to send to the server
+
+      const data = await callTranscribeEndpoint(formData);
+      setText(data.transcript);
+      console.log(data.transcript);
     }
   }
 
