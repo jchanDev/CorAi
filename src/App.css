@@ -1,5 +1,4 @@
 .App {
-  overflow-y: scroll;
 }
 
 .App-logo {
@@ -17,6 +16,15 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+.editorStyle{
+  color: "black";
+  border: "transparent";
+  min-height: 600px;
+  border-top: "transparent";
+  border-bottom: transparent;
+
 }
 
 .App-header {
@@ -56,23 +64,27 @@
 }
 
 .main-body-container{
+  padding-left: 15px;
+  padding-right:15px;
+  padding-top: 100px;
+  width: 100%;
+  height: 50%;
   display: flex;
   flex-direction: row;
 }
 
 .paper{
-  margin-top: 20px;
   flex:2;
   background-color: #fff;
-  height: 300px;
-  margin-right: 20px;
+  height: 520px;
+  margin-right: 35px;
+  overflow-y: scroll;
 }
 
 .paper-options{
-  margin-top: 20px;
   display: flex;
   flex: 1;
-  height: 175px;
+  height: 500px;
   background-color: none;
   flex-direction: column;
 }
@@ -116,7 +128,7 @@
 .record-button{
   padding-top: 10px;
   padding-bottom: 10px;
-  margin-top: 10%;
+  margin-top: 20px;
   align-self: center;
   justify-self: center;
   width: 170px;

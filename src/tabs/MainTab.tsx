@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import "../App.css";
 const MainTab = () => {
   const [showMainTab, setShowMainTab] = useState(false);
@@ -9,6 +11,7 @@ const MainTab = () => {
   const handleClick = () => {
     setShowMainTab(true);
   };
+  const [text, setText] = useState(""); console.log(text);
   const [paperOptions, setPaperOptions] = useState([
     { label: "Transcript", color: true },
     { label: "Notes", color: false },
@@ -30,7 +33,9 @@ const MainTab = () => {
       <div className="main-tab-line"></div>
 
       <div className="main-body-container">
-        <div className="paper" />
+        <div className="paper">
+            <ReactQuill value={text} onChange={setText} style={{color: "black"}} placeholder="Or paste your notes here" />
+        </div>
         <div className="paper-options">
           {paperOptions.map((option, index) => (
             <button
