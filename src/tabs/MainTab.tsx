@@ -12,7 +12,7 @@ import { useReactMediaRecorder } from "react-media-recorder";
 import "react-quill/dist/quill.snow.css";
 import "../App.css";
 
-// const mimeType = "audio/wav";
+
 const MainTab = () => {
   const {
     status,
@@ -20,9 +20,8 @@ const MainTab = () => {
     pauseRecording,
     stopRecording,
     mediaBlobUrl,
-  } = useReactMediaRecorder({ audio: true, blobPropertyBag: { type: "audio/wav" } });
+  } = useReactMediaRecorder({ audio: true, blobPropertyBag: { type: "audio/mp3" } });
   const download = () => {
-    if (mediaBlobUrl) {
       setPaperOptions(paperOptions => paperOptions.map((option, i) => {
         if (i === 1) {
           return {
@@ -35,9 +34,11 @@ const MainTab = () => {
         }
       }));
       setTranscribed(true);
-      var element = document.createElement("a");
+
+
+      /*var element = document.createElement("a");
       element.setAttribute("href", mediaBlobUrl);
-      element.setAttribute("download", "audio.wav");
+      element.setAttribute("download", "audio.mp3");
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
@@ -49,8 +50,8 @@ const MainTab = () => {
             blob: blob,
             filename: "audio.mp3",
           };
-        });
-    }
+        });*/
+    
   };
 
   const transcript = "This is a transcript";
@@ -104,7 +105,7 @@ const MainTab = () => {
     },
   ]);
 
-  async function callTranscribeEndpoint(file: File): Promise<any> {
+  async function callTranscribeEndpoint(formdata: FormData): Promise<any> {
     const url = "http://20.124.194.25:80/transcribe";
 
     const formData = new FormData();
@@ -164,7 +165,7 @@ const MainTab = () => {
     download();
     if (mediaBlobUrl) {
       const audioBlob = await fetch(mediaBlobUrl).then((r) => r.blob());
-      const audioFile = new File([audioBlob], 'voice.wav', { type: 'audio/wav' });
+      const audioFile = new File([audioBlob], 'voice.mp3', { type: 'audio/mp3' });
       const formData = new FormData(); // preparing to send to the server
   
       formData.append('file', audioFile);  // preparing to send to the server
