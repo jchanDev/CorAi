@@ -1,7 +1,8 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import openai
-import dotenv
+# import dotenv
 import os
 import re
 
@@ -10,10 +11,18 @@ from pydantic import BaseModel
 class Notes(BaseModel):
     notes: str
 
-dotenv.load_dotenv('.env')
+# dotenv.load_dotenv('.env')
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Update this to restrict origins if needed
+    allow_credentials=True,
+    allow_methods=["*"],  # Update this to restrict HTTP methods if needed
+    allow_headers=["*"],  # Update this to restrict headers if needed
+)
 
 @app.get("/health")
 async def health():
@@ -30,26 +39,29 @@ async def health_api():
 
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
-    filename = file.filename.split(".")[0]
-    file_path = f"temp/{filename}.mp4"
+    filename = file.filename
+    file_path = f"temp/{filename}"
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
     # write to wav file
-    wav_file_path = f"temp/{filename}-converted.wav"
-    ffmpeg_command = ["ffmpeg", "-i", file_path, "-ar", "16000", "-vn", "-acodec",  "pcm_s16le", wav_file_path]
-    subprocess.run(ffmpeg_command, check=True)
+    # wav_file_path = f"temp/{filename}-converted.wav"
+    # ffmpeg_command = ["ffmpeg", "-i", file_path, "-ar", "16000", "-vn", "-acodec",  "pcm_s16le", wav_file_path]
+    # subprocess.run(ffmpeg_command, check=True)
     
     # remove original file
-    os.remove(file_path)
+    # os.remove(file_path)
 
     # process with whisper
-    transcript = whisper_transcribe(wav_file_path)
+    transcript = whisper_transcribe(file_path)
+    print('LOGGING:', transcript)
     notes = gpt_notes(transcript)
+    print('LOGGING:', notes)
     review_questions = gpt_review_questions(notes)
+    print('LOGGING:', review_questions)
 
     # remove wav file
-    os.remove(wav_file_path)
+    os.remove(file_path)
 
     return {"transcript": transcript,
             "notes": notes,
