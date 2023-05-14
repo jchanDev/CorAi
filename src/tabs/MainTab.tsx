@@ -7,7 +7,6 @@ import {
   faPlay,
   faDownload,
 } from "@fortawesome/free-solid-svg-icons";
-
 import ReactQuill from "react-quill";
 import { useReactMediaRecorder } from "react-media-recorder";
 import "react-quill/dist/quill.snow.css";
@@ -24,6 +23,17 @@ const MainTab = () => {
   } = useReactMediaRecorder({ audio: true });
   const download = () => {
     if (mediaBlobUrl) {
+      setPaperOptions(paperOptions => paperOptions.map((option, i) => {
+        if (i === 1) {
+          return {
+            ...option,
+            displayTab: true,
+            color: true,
+          };
+        } else {
+            return {...option, color: false};
+        }
+      }));
       setTranscribed(true);
       var element = document.createElement("a");
       element.setAttribute("href", mediaBlobUrl);
@@ -49,6 +59,8 @@ const MainTab = () => {
 
   const [showMainTab, setShowMainTab] = useState(false);
   const [transcribed, setTranscribed] = useState(false);
+  const [notesTab, setnotesTab] = useState(false);
+  const [reviewQuesTab, setQuesTab] = useState(false);
 
   const handleClick = () => {
     setShowMainTab(true);
@@ -62,6 +74,7 @@ const MainTab = () => {
   ]);*/
 
   type PaperOption = {
+    displayTab: boolean;
     label: string;
     color: boolean;
     text:
@@ -72,66 +85,69 @@ const MainTab = () => {
 
   const [paperOptions, setPaperOptions] = useState<PaperOption[]>([
     {
+      displayTab: false,
       label: "Transcript",
-      color: true,
-      text: { transcript },
+      color: false,
+      text: { transcript: "transcript text" },
     },
     {
+      displayTab: false,
       label: "Notes",
       color: false,
-      text: { notes },
+      text: { notes: "notes text" },
     },
     {
+      displayTab: false,
       label: "Review questions",
       color: false,
-      text: { reviewQuestions },
+      text: { reviewQuestions: "review questions text" },
     },
   ]);
 
   async function callTranscribeEndpoint(file: File): Promise<any> {
-    const url = 'http://20.124.194.25:80/transcribe';
-  
+    const url = "http://20.124.194.25:80/transcribe";
+
     const formData = new FormData();
-    formData.append('file', file);
-  
+    formData.append("file", file);
+
     try {
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
-  
+
       if (!response.ok) {
-        throw new Error('Error calling API endpoint');
+        throw new Error("Error calling API endpoint");
       }
-  
+
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       throw error;
     }
   }
 
   async function callNotesEndpoint(text: string): Promise<any> {
-    const url = 'http://20.124.194.25:80/notes';
+    const url = "http://20.124.194.25:80/notes";
 
     const formData = new FormData();
-    formData.append('text', text);
+    formData.append("text", text);
 
     try {
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Error calling API endpoint');
+        throw new Error("Error calling API endpoint");
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       throw error;
     }
   }
@@ -139,18 +155,13 @@ const MainTab = () => {
   const changePaperContent = (index: number) => {
     const updatedOptions = paperOptions.map((option, i) => ({
       label: option.label,
+      displayTab: transcribed && (i === index) ? true : false,
       color: i === index ? true : false,
-      text:
-        i === index
-          ? option.text
-          : {
-              transcript: "",
-              notes: "",
-              reviewQuestions: "",
-            },
+      text: option.text,
     }));
     setPaperOptions(updatedOptions);
   };
+
   return (
     <div className="main-tab-container">
       <button className="main-tab-button" onClick={handleClick}>
@@ -160,14 +171,15 @@ const MainTab = () => {
 
       <div className="main-body-container">
         <div className="paper">
-          {transcribed === false}(
-          <ReactQuill
-            value={text}
-            onChange={setText}
-            style={{ color: "black" }}
-            placeholder="Or paste your notes here"
-          />
-          )
+          {transcribed === false ? (
+            <ReactQuill
+              value={text}
+              onChange={setText}
+              style={{ color: "black" }}
+              placeholder="Or paste your notes here"
+            />
+          ) : Object.values(paperOptions.find((option) => option.displayTab === true)?.text || {})[0]} 
+
         </div>
         <div className="paper-options">
           {paperOptions.map((option, index) => (
@@ -193,7 +205,6 @@ const MainTab = () => {
 
           {status === "recording" && (
             <button onClick={stopRecording} className="record-button">
-              callTranscribeEndpoint(mediaBlobUrl);
               <div className="mic-icon">
                 <FontAwesomeIcon icon={faPause} />
                 <div className="mic-text">Stop</div>

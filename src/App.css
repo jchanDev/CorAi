@@ -79,6 +79,10 @@
   height: 515px;
   margin-right: 35px;
   overflow-y: scroll;
+  color: #000;
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  font-size: 20px;
+  padding: 10px;
 }
 
 
