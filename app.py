@@ -5,35 +5,47 @@ import dotenv
 import os
 import re
 
+from pydantic import BaseModel
+
+class Notes(BaseModel):
+    notes: str
+
 dotenv.load_dotenv('.env')
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
-"""
-Todo: regex parse out whisper_full_with_state: progress =   5% stuff
-Full whisper.cpp command: ./whisper.cpp/main -m ./whisper.cpp/models/ggml-base.en.bin -f {FILE} --no-timestamps -pp
-"""
-
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
-    file_path = f"temp/{file.filename}"
+    filename = file.filename.split(".")[0]
+    file_path = f"temp/{filename}.mp4"
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
     # write to wav file
-    wav_file_path = f"temp/{file.filename}.wav"
-    ffmpeg_command = ["ffmpeg", "-i", file_path, "-ar", "16000", wav_file_path]
+    wav_file_path = f"temp/{filename}-converted.wav"
+    ffmpeg_command = ["ffmpeg", "-i", file_path, "-ar", "16000", "-vn", "-acodec",  "pcm_s16le", wav_file_path]
     subprocess.run(ffmpeg_command, check=True)
+    
+    # remove original file
+    os.remove(file_path)
 
     # process with whisper
     transcript = whisper_transcribe(wav_file_path)
     notes = gpt_notes(transcript)
     review_questions = gpt_review_questions(notes)
 
+    # remove wav file
+    os.remove(wav_file_path)
+
     return {"transcript": transcript,
             "notes": notes,
             "review_questions": review_questions}
+
+@app.post("/notes")
+async def notes(notes: Notes):
+    gpt_results = gpt_notes(notes.notes)
+    return {"notes": gpt_results}
 
 def clean_string(string):
     rgx_list = [r'\(.*\)']
@@ -73,7 +85,7 @@ def gpt_notes(transcript):
         gpt_reply = response['choices'][0]['message']['content']
         notes.append(gpt_reply)
     
-        return '\n'.join(notes)
+    return '\n'.join(notes)
     
 def gpt_review_questions(notes):
     # chunk notes into 4000 word segments
@@ -92,11 +104,6 @@ def gpt_review_questions(notes):
                               ' review questions based on the material and the lectures.'
                               ' Start each question with a "*" and end without a newline:\n\n' + message}])
 
-
-    """
-    * Bullet Point
-        - Indented bullet point
-    * Other bullet
-        - Indent 1
-        - Indent 2
-    """
+        reply = response['choices'][0]['message']['content']
+        review_questions.append(reply)
+    return '\n'.join(review_questions)
