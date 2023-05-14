@@ -128,7 +128,7 @@ const MainTab = () => {
   ]);
 
   async function callTranscribeEndpoint(formdata: FormData): Promise<any> {
-    const url = "http://34.27.248.131:80/transcribe";
+    const url = "http://localhost:3000/transcribe";
 
     try {
       const response = await fetch(url, {
@@ -149,7 +149,7 @@ const MainTab = () => {
   }
 
   async function callNotesEndpoint(text: string): Promise<any> {
-    const url = "http://34.27.248.131:80/notes";
+    const url = "http://localhost:3000/notes";
 
     try {
       const response = await fetch(url, {
