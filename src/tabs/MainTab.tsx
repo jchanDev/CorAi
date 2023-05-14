@@ -11,32 +11,60 @@ import ReactQuill from "react-quill";
 import { useReactMediaRecorder } from "react-media-recorder";
 import "react-quill/dist/quill.snow.css";
 import "../App.css";
-
+import ReactMarkdown from "react-markdown";
 
 const MainTab = () => {
+  var transcriptText = "";
+  var notesText = "";
+  var reviewText = "";
+
   const {
     status,
     startRecording,
     pauseRecording,
     stopRecording,
     mediaBlobUrl,
-  } = useReactMediaRecorder({ audio: true, blobPropertyBag: { type: "audio/mp3" } });
-  const download = () => {
-      setPaperOptions(paperOptions => paperOptions.map((option, i) => {
-        if (i === 1) {
-          return {
-            ...option,
-            displayTab: true,
-            color: true,
-          };
-        } else {
-            return {...option, color: false};
-        }
-      }));
-      setTranscribed(true);
+  } = useReactMediaRecorder({
+    audio: true,
+    blobPropertyBag: { type: "audio/mp3" },
+  });
+  const [text, setText] = useState("");
+  const transcriber = async () => {
+    if (text) {
+      var data = await callNotesEndpoint(text);
+    } else {
+      const audioBlob = await fetch(mediaBlobUrl!!).then((r) => r.blob());
+      const audio = new File([audioBlob], "audio.mp3", { type: "audio/mp3" });
+      const formData = new FormData();
+      formData.append("file", audio);
+      var data = await callTranscribeEndpoint(formData);
+    }
+    setPaperOptions((paperOptions) => [
+      {
+        displayTab: false,
+        label: "Transcript",
+        color: false,
+        text: { transcript: data.transcript },
+      },
+      {
+        displayTab: true,
+        label: "Notes",
+        color: true,
+        text: { notes: data.notes },
+      },
+      {
+        displayTab: false,
+        label: "Review questions",
+        color: false,
+        text: { reviewQuestions: data.review_questions },
+      },
+    ]);
+    transcriptText = data.transcript;
+    notesText = data.notes;
+    reviewText = data.reviewQuestions;
+    setTranscribed(true);
 
-
-      /*var element = document.createElement("a");
+    /*var element = document.createElement("a");
       element.setAttribute("href", mediaBlobUrl);
       element.setAttribute("download", "audio.mp3");
       element.style.display = "none";
@@ -51,7 +79,6 @@ const MainTab = () => {
             filename: "audio.mp3",
           };
         });*/
-    
   };
 
   const transcript = "This is a transcript";
@@ -60,14 +87,9 @@ const MainTab = () => {
 
   const [showMainTab, setShowMainTab] = useState(false);
   const [transcribed, setTranscribed] = useState(false);
-  const [notesTab, setnotesTab] = useState(false);
-  const [reviewQuesTab, setQuesTab] = useState(false);
-
   const handleClick = () => {
     setShowMainTab(true);
   };
-  const [text, setText] = useState("");
-  console.log(text);
   /*const [paperOptions, setPaperOptions] = useState([
     { label: "Transcript", color: true, text: { transcript } },
     { label: "Notes", color: false, text: { notes } },
@@ -89,32 +111,29 @@ const MainTab = () => {
       displayTab: false,
       label: "Transcript",
       color: false,
-      text: { transcript: "transcript text" },
+      text: { transcript: transcriptText },
     },
     {
       displayTab: false,
       label: "Notes",
       color: false,
-      text: { notes: "notes text" },
+      text: { notes: notesText },
     },
     {
       displayTab: false,
       label: "Review questions",
       color: false,
-      text: { reviewQuestions: "review questions text" },
+      text: { reviewQuestions: reviewText },
     },
   ]);
 
   async function callTranscribeEndpoint(formdata: FormData): Promise<any> {
-    const url = "http://20.124.194.25:80/transcribe";
-
-    const formData = new FormData();
-    formData.append("file", file);
+    const url = "http://34.27.248.131:80/transcribe";
 
     try {
       const response = await fetch(url, {
         method: "POST",
-        body: formData,
+        body: formdata,
       });
 
       if (!response.ok) {
@@ -128,25 +147,17 @@ const MainTab = () => {
       throw error;
     }
   }
-
-  // async function handleEndRecording() {
-  //   if (mediaBlobUrl) {
-  //     const file = await fetch(mediaBlobUrl).then((r) => r.blob());
-  //     const data = await callTranscribeEndpoint(file);
-  //     setText(data.transcript);
-  //   }
-  // }
 
   async function callNotesEndpoint(text: string): Promise<any> {
-    const url = "http://20.124.194.25:80/notes";
-
-    const formData = new FormData();
-    formData.append("text", text);
+    const url = "http://34.27.248.131:80/notes";
 
     try {
       const response = await fetch(url, {
         method: "POST",
-        body: formData,
+        body: JSON.stringify({ notes: text }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -154,32 +165,17 @@ const MainTab = () => {
       }
 
       const data = await response.json();
-      return data;
+      return { ...data, transcript: text };
     } catch (error) {
       console.error("Error:", error);
       throw error;
-    }
-  }
-
-  async function transcribe() {
-    download();
-    if (mediaBlobUrl) {
-      const audioBlob = await fetch(mediaBlobUrl).then((r) => r.blob());
-      const audioFile = new File([audioBlob], 'voice.mp3', { type: 'audio/mp3' });
-      const formData = new FormData(); // preparing to send to the server
-  
-      formData.append('file', audioFile);  // preparing to send to the server
-
-      const data = await callTranscribeEndpoint(formData);
-      setText(data.transcript);
-      console.log(data.transcript);
     }
   }
 
   const changePaperContent = (index: number) => {
     const updatedOptions = paperOptions.map((option, i) => ({
       label: option.label,
-      displayTab: transcribed && (i === index) ? true : false,
+      displayTab: transcribed && i === index ? true : false,
       color: i === index ? true : false,
       text: option.text,
     }));
@@ -202,8 +198,16 @@ const MainTab = () => {
               style={{ color: "black" }}
               placeholder="Or paste your notes here"
             />
-          ) : Object.values(paperOptions.find((option) => option.displayTab === true)?.text || {})[0]} 
-
+          ) : (
+            <ReactMarkdown>
+              {
+                Object.values(
+                  paperOptions.find((option) => option.displayTab === true)
+                    ?.text || {}
+                )[0]
+              }
+            </ReactMarkdown>
+          )}
         </div>
         <div className="paper-options">
           {paperOptions.map((option, index) => (
@@ -237,7 +241,7 @@ const MainTab = () => {
           )}
 
           {status === "stopping" || status === "stopped" || text !== "" ? (
-            <button onClick={download} className="record-button">
+            <button onClick={transcriber} className="record-button">
               <div className="mic-icon">
                 <FontAwesomeIcon icon={faDownload} />
                 <div className="mic-text">Transcribe</div>
