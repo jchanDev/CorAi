@@ -15,6 +15,19 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+@app.get("/test-api-key")
+async def health_api():
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{'role':'user', 
+                    'content':'You are a helpful and knowledgable AI system.'
+                              ' This is a test of the OpenAI API key.'}])
+    return response
+
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
     filename = file.filename.split(".")[0]
